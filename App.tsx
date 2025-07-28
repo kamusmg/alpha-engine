@@ -20,9 +20,27 @@ import RefreshIcon from './components/RefreshIcon';
 import RobustnessAudit from './components/RobustnessAudit';
 import CommandBridge from './components/CommandBridge';
 
+import { SignIn, useUser } from "@clerk/clerk-react"; // Import Clerk
+
 const CACHE_KEY = 'cryptoAlphaEngineCache';
 
 const App: React.FC = () => {
+  const { isSignedIn, isLoaded } = useUser();
+
+  // Checagem do Clerk - só mostra a tela se estiver autenticado
+  if (!isLoaded) {
+    return <div style={{ textAlign: "center", padding: 80 }}>Carregando autenticação...</div>;
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <SignIn />
+      </div>
+    );
+  }
+
+  // --- Daqui pra baixo é TODO o SEU APP normal ---
   const [simulationData, setSimulationData] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +49,7 @@ const App: React.FC = () => {
   const [rerollErrors, setRerollErrors] = useState<Record<string, string | null>>({});
   const [shortTermFeedback, setShortTermFeedback] = useState<ShortTermTradeFeedback | null>(null);
   const [feedbackReadyForRecalc, setFeedbackReadyForRecalc] = useState<boolean>(false);
-  
+
   // State for Command Bridge
   const [chat, setChat] = useState<Chat | null>(null);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([
@@ -48,17 +66,15 @@ const App: React.FC = () => {
         const data = await fetchTimeTravelAnalysis();
         setSimulationData(data);
         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        
         // Initialize chat
         const newChat = createChatSession(data);
         setChat(newChat);
-
       } catch (e: any) {
         const cachedData = localStorage.getItem(CACHE_KEY);
         if (cachedData) {
-          const parsedCache = JSON.parse(cachedData)
+          const parsedCache = JSON.parse(cachedData);
           setSimulationData(parsedCache);
-           // Initialize chat from cache
+          // Initialize chat from cache
           const newChat = createChatSession(parsedCache);
           setChat(newChat);
           setCacheWarning("Falha ao conectar com a API. Exibindo os últimos dados válidos do cache.");
@@ -71,7 +87,7 @@ const App: React.FC = () => {
     };
     initialLoad();
   }, []);
-  
+
   const handleRecalculate = useCallback(async () => {
     if (loading) return;
 
@@ -88,7 +104,6 @@ const App: React.FC = () => {
       const newChat = createChatSession(data);
       setChat(newChat);
       setChatHistory([{ role: 'model', text: "Núcleo reiniciado com novos dados. Ponte de Comando Alpha ativa. Aguardando ordens." }]);
-
     } catch (e: any) {
       const cachedData = localStorage.getItem(CACHE_KEY);
       if (cachedData) {
@@ -131,7 +146,7 @@ const App: React.FC = () => {
 
       setSimulationData(prevData => {
         if (!prevData) return null;
-        
+
         const newData = JSON.parse(JSON.stringify(prevData));
 
         if (type === 'buy') {
@@ -145,7 +160,7 @@ const App: React.FC = () => {
     } catch (e) {
       console.error(`Failed to fetch new ${type} signal at index ${index}`, e);
       setRerollErrors(prev => ({ ...prev, [key]: "Falha ao buscar novo ativo." }));
-      setTimeout(() => setRerollErrors(prev => ({...prev, [key]: null})), 3000); // Clear error after 3s
+      setTimeout(() => setRerollErrors(prev => ({ ...prev, [key]: null })), 3000); // Clear error after 3s
     } finally {
       setIsRerolling(prev => ({ ...prev, [key]: false }));
     }
@@ -157,18 +172,18 @@ const App: React.FC = () => {
     const newHistory = [...chatHistory, { role: 'user' as const, text: message }];
     setChatHistory(newHistory);
     setIsChatLoading(true);
-    
+
     try {
-        const response = await chat.sendMessage({ message });
-        setChatHistory([...newHistory, { role: 'model' as const, text: response.text }]);
+      const response = await chat.sendMessage({ message });
+      setChatHistory([...newHistory, { role: 'model' as const, text: response.text }]);
     } catch (e: any) {
-        console.error("Chat error:", e);
-        const errorText = e.message || "Ocorreu um erro de comunicação com o núcleo Alpha. Por favor, tente novamente.";
-        setChatHistory([...newHistory, { role: 'model' as const, text: `Erro: ${errorText}` }]);
+      console.error("Chat error:", e);
+      const errorText = e.message || "Ocorreu um erro de comunicação com o núcleo Alpha. Por favor, tente novamente.";
+      setChatHistory([...newHistory, { role: 'model' as const, text: `Erro: ${errorText}` }]);
     } finally {
-        setIsChatLoading(false);
+      setIsChatLoading(false);
     }
-};
+  };
 
   const backtestSummaryResult = useMemo(() => {
     if (!simulationData) {
@@ -184,10 +199,9 @@ const App: React.FC = () => {
     const totalFinalValue = allBacktestSignals.reduce((acc, signal) => acc + signal.finalValue, 0);
     const totalProfit = totalFinalValue - totalInvestment;
     const totalRoiPercentage = totalInvestment > 0 ? (totalProfit / totalInvestment) * 100 : 0;
-    
+
     return { totalInvestment, totalFinalValue, totalProfit, totalRoiPercentage };
   }, [simulationData]);
-
 
   if (loading && !simulationData) {
     return <LoadingSpinner />;
@@ -201,7 +215,6 @@ const App: React.FC = () => {
     return <ErrorDisplay message="Não foi possível carregar os dados da simulação." />;
   }
 
-
   return (
     <div className="min-h-screen bg-background text-text p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -209,8 +222,8 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
             <MoonPhaseIcon className="h-12 w-12 text-primary" />
             <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-text">Crypto Alpha Engine</h1>
-                <p className="text-md text-text-secondary">Supervisor Mode: ON</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-text">Crypto Alpha Engine</h1>
+              <p className="text-md text-text-secondary">Supervisor Mode: ON</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -228,30 +241,30 @@ const App: React.FC = () => {
         </header>
 
         {cacheWarning && (
-            <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-300 p-3 rounded-lg text-center text-sm mb-8">
-                {cacheWarning}
-            </div>
+          <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-300 p-3 rounded-lg text-center text-sm mb-8">
+            {cacheWarning}
+          </div>
         )}
-        
+
         <main className="space-y-12">
-          
+
           <CommandBridge
             history={chatHistory}
             onSendMessage={handleSendMessage}
             isLoading={isChatLoading}
             disabled={!chat}
           />
-          
+
           <QuickAnalysis />
 
           <ChartAnalysis onNewFeedback={handleNewShortTermFeedback} />
 
-          <AICoreMonitor 
+          <AICoreMonitor
             evolutionPercentage={simulationData.evolutionPercentage}
             realMoneySuccessProbability={simulationData.realMoneySuccessProbability}
             macroContext={simulationData.macroContext}
           />
-          
+
           <RobustnessAudit />
 
           {simulationData.majorAssetAnalysis && (
@@ -263,12 +276,12 @@ const App: React.FC = () => {
               <strong className="font-bold">Notificação de Calibração:</strong> {simulationData.perfectionNotification}
             </div>
           )}
-          
+
           {simulationData.macroContext && (
             <MacroDashboard context={simulationData.macroContext} />
           )}
 
-          <PresentDaySignalCard 
+          <PresentDaySignalCard
             buySignals={simulationData.presentDayBuySignals}
             sellSignals={simulationData.presentDaySellSignals}
             onReroll={handleReroll}
@@ -277,21 +290,21 @@ const App: React.FC = () => {
             strengths={simulationData.presentDayStrengths}
             weaknesses={simulationData.presentDayWeaknesses}
           />
-          
+
           <BacktestExplanationCard />
-          
+
           <BacktestHorizonSection title="Resultados do Backtest - Horizonte 24 Horas" signals={simulationData.signals24h} />
           <BacktestHorizonSection title="Resultados do Backtest - Horizonte 7 Dias" signals={simulationData.signals7d} />
           <BacktestHorizonSection title="Resultados do Backtest - Horizonte 30 Dias" signals={simulationData.signals30d} />
 
-          <BacktestSummaryCard 
+          <BacktestSummaryCard
             totalInvestment={backtestSummaryResult.totalInvestment}
             totalFinalValue={backtestSummaryResult.totalFinalValue}
             totalProfit={backtestSummaryResult.totalProfit}
             totalRoiPercentage={backtestSummaryResult.totalRoiPercentage}
           />
 
-          <EvolutionCycleCard 
+          <EvolutionCycleCard
             analysis={simulationData.selfAnalysis}
             promptText={simulationData.evolutionPrompt}
             backtestStrengths={simulationData.backtestStrengths}
@@ -305,7 +318,7 @@ const App: React.FC = () => {
             <p className="text-sm text-text-secondary">
               Esta ferramenta é para análise e estudo. Não constitui recomendação de investimento.
             </p>
-             <p className="text-xs text-text-secondary mt-1">
+            <p className="text-xs text-text-secondary mt-1">
               Versão da IA: {simulationData.versionId}
             </p>
           </footer>
