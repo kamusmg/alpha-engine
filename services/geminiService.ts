@@ -6,7 +6,8 @@ import { DateTime } from 'luxon';
 import { formatCurrency } from '../utils/formatters';
 
 // The API key is expected to be managed by the execution environment.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+
 
 const getCurrentSaoPauloTime = () => DateTime.now().setZone('America/Sao_Paulo');
 
