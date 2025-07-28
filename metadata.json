@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Alpha Engine V5 - Com chatbot",
+  "description": "An AI-powered application that performs backtesting on high-risk crypto assets across multiple time horizons (24h, 7d, 30d) to refine predictive models and generate actionable signals.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}
