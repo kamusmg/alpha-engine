@@ -20,21 +20,28 @@ import RefreshIcon from './components/RefreshIcon';
 import RobustnessAudit from './components/RobustnessAudit';
 import CommandBridge from './components/CommandBridge';
 
-import { SignIn, useUser } from "@clerk/clerk-react"; // Import Clerk
+import { SignIn, useUser } from "@clerk/clerk-react"; // Importa Clerk
 
 const CACHE_KEY = 'cryptoAlphaEngineCache';
 
 const App: React.FC = () => {
   const { isSignedIn, isLoaded } = useUser();
 
-  // Checagem do Clerk - só mostra a tela se estiver autenticado
+  // Mostra o spinner enquanto carrega a autenticação do Clerk
   if (!isLoaded) {
-    return <div style={{ textAlign: "center", padding: 80 }}>Carregando autenticação...</div>;
+    return <LoadingSpinner />;
   }
 
+  // Se não estiver logado, mostra a tela de login
   if (!isSignedIn) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#161C25" // opcional: deixa o fundo igual ao app
+      }}>
         <SignIn />
       </div>
     );
