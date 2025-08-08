@@ -1,0 +1,8 @@
+{
+  "name": "Lucra Crypto",
+  "description": "IA para prever o mercado",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}
