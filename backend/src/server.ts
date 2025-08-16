@@ -32,7 +32,7 @@ app.post('/api/analysis/sentiment', analysisController.getSentimentAnalysis);
 
 
 // Basic Error Handling Middleware
-const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+const errorHandler: express.ErrorRequestHandler = (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ message: 'An internal server error occurred', error: err.message });
 };

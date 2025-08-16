@@ -369,6 +369,7 @@ export interface CompletedTrade {
   actualProfitUsd: number;
   actualRoiPercentage: number;
   status: 'Closed' | 'Error';
+  feesUsd?: number;
 }
 
 export interface PerformanceMetrics {
